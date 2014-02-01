@@ -113,7 +113,7 @@ If there isn't enough memory in the programmers program memory one can save the 
 
 * No checks are made using the checksum bits as it's assumed the image has been tested and no soft errors or single event upsets occur (don't use this code in space). Either way data is read and immediately sent to the target so there are no preliminary tests possible before it's too late.
 
-* [Intel HEX format][intelhex] is quite inefficient here as one nibble (4 bits) is coded on a complete byte (8 bits), so if some code doesn't fit the program memory one could refactor the image code so it would take half the space, but this requires extensive changes in the programming code too. It was left this way because it's easier to just copy the compiled code instead of refactoring it in special way.
+* [Intel HEX format][intelhex] is quite inefficient here as one nibble (4 bits) is coded on a complete byte (8 bits), so if some code doesn't fit the program memory one could refactor the image code so it would take half the space.
 
 [optiloader]: https://github.com/WestfW/OptiLoader "OptiLoader"
 [avrisp]: http://www.atmel.ch/Images/doc0943.pdf "AVR910: In-System Programming"
