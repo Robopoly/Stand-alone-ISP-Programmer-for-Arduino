@@ -35,7 +35,7 @@ To use the sketch one has to tell it what to do via the serial monitor, here's t
 
 | Function            | Character | Description
 | ------------------- | --------- | -----------
-| Program memory      | `b`       | This instruction tries to identify the connected micro-controller, searches for a compatible entry in the available image array and uploads it. It checks if the reset pin is pulled high by the target before trying to communicate with it. |
+| Program memory      | `p`       | This instruction tries to identify the connected micro-controller, searches for a compatible entry in the available image array and uploads it. It checks if the reset pin is pulled high by the target before trying to communicate with it. |
 | Read program memory | `r`       | Dump all program memory from 0 to the maximum program memory address to serial monitor. The program memory size is indicated in the micro-controller signature bytes. |
 | Read fuse bits      | `f`       | Shows the current state of the fuse bits. |
 
