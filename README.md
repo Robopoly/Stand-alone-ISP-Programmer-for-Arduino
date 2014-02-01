@@ -74,7 +74,7 @@ To add a new image, assuming there's enough memory in the programmers program me
     image_t *images[] = {&image_prismino};
 
     // the actual image code directly from .hex file with added quotes in "images.cpp"
-    char PROGMEM prisminohex[] = {
+    const char PROGMEM prisminoimg[] = {
     ":107000005FC0000078C0000076C0000074C00000BF"
     ":1070100072C0000070C000006EC000006CC00000B4"
     ":107020006AC0000068C00000C9C4000064C000005D"
@@ -92,7 +92,7 @@ To add a new image, assuming there's enough memory in the programmers program me
       {0x3F, 0xFF, 0xD8, 0xCB}, // memory protection, low, high and extended fuses when programming
       {0x2F, 0xFF, 0xD8, 0xCB}, // memory protection, low, high and extended fuses when complete
       128,                      // page size on an atmega32u4 is 128 words (see datasheet)
-      prisminohex               // pointer to the actual image
+      prisminoimg               // pointer to the actual image
     };
 
 The important information one has to know are: the micro-controller signature bytes and page size (found in the respective datasheet) and all the fuse bits that can conveniently be calculated with the help of [this calculator][fusecalc].
