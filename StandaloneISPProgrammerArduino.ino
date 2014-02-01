@@ -45,19 +45,8 @@ void loop()
       //case 't': eeprom_memory_test(); break;
       //case 'w': wipe_all_memory(); break;
       case 'f': read_fuse_bits(); break;
-      case 'y': fuse(); break;
     }
   }
-}
-
-// returns the low, high, extended and lock fuse bits
-void fuse()
-{
-  enable_memory_access();
-  target_identify();
-  target_findimage();
-  target_setfuses(target_image->progfuses);
-  reset_spi();
 }
 
 // returns the low, high, extended and lock fuse bits
