@@ -73,7 +73,7 @@ To add a new image, assuming there's enough memory in the programmers program me
     // array of available images in main sketch file
     image_t *images[] = {&image_prismino};
 
-    // the actual image code directly from .hex file with added quotes in "images.cpp"
+    // the image code directly from .hex file with added quotes in "images.cpp"
     const char PROGMEM prisminoimg[] = {
     ":107000005FC0000078C0000076C0000074C00000BF"
     ":1070100072C0000070C000006EC000006CC00000B4"
@@ -86,11 +86,11 @@ To add a new image, assuming there's enough memory in the programmers program me
     ":00000001FF"
     };
 
-    // the actual image_t image_prismino
-    image_t PROGMEM prismino = {
+    // the image_t object
+    image_t PROGMEM image_prismino = {
       0x9587,                   // atmega32u4 signature bytes (see datasheet)
-      {0x3F, 0xFF, 0xD8, 0xCB}, // memory protection, low, high and extended fuses when programming
-      {0x2F, 0xFF, 0xD8, 0xCB}, // memory protection, low, high and extended fuses when complete
+      {0x3F, 0xFF, 0xD8, 0xCB}, // lock, low, high and extended fuses when programming
+      {0x2F, 0xFF, 0xD8, 0xCB}, // lock, low, high and extended fuses when complete
       128,                      // page size on an atmega32u4 is 128 words (see datasheet)
       prisminoimg               // pointer to the actual image
     };
