@@ -22,7 +22,9 @@ In this example a micro-controller with 32KB of program memory was used, unfortu
 
 In order to remedy to that a Python script was made to transform that Intel HEX format to binary and merge nibbles together making the final size half of the original.
 
-See the example of `image_merged.hex` refactored in `output.txt`. The refactoring Python code is in `refactor.py`.
+See the example of `image_merged.txt` refactored in `output.txt`. The refactoring Python code is in `refactor.py`.
+
+To use the Python code call `$python refactor.py [filename]`.
 
 ## Programming
 
