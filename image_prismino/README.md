@@ -14,7 +14,7 @@ The compiled .hex files are stored in the temporary folder of the computer, the 
 
 ## Merging
 
-To merge the the bootloader and the initial code one has to simply paste the bootloader code after the initial code in the Intel HEX format, see the example in `image_merged.hex`. The sketch has to be first.
+To merge the the bootloader and the initial code one has to simply paste the bootloader code after the initial code in the Intel HEX format, see the example in `image_merged.hex`. The sketch has to come first.
 
 ## Refactoring
 

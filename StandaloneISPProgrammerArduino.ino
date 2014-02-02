@@ -231,6 +231,7 @@ boolean target_setfuses(const uint8_t *fuses)
 {
   uint8_t f;
   
+  // wait for the target to finish whatever it's doing
   while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
   
   f = pgm_read_byte(&fuses[FUSE_LOCK]);
@@ -398,11 +399,14 @@ uint8_t hex2char(char *&addr)
   uint8_t c;
   if(imageFormat == FORMAT_HEX)
   {
+    // intel hex is coded on 2 bytes, but only half of which is useful data
+    // merge 2 nibbles to get a byte
     c = hexton(pgm_read_byte(addr++));
     c = (c << 4) + hexton(pgm_read_byte(addr++));
   }
   else
   {
+    // the compact format stores the image in binary and takes half the space of intel hex
     c = pgm_read_byte(addr++);
   }
   return c;

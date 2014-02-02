@@ -39,7 +39,7 @@ To use the sketch one has to tell it what to do via the serial monitor, here's t
 | Read program memory | `r`       | Dump all program memory from 0 to the maximum program memory address to serial monitor. The program memory size is indicated in the micro-controller signature bytes. |
 | Read fuse bits      | `f`       | Shows the current state of the fuse bits. |
 
-Ex: send `b` via the serial monitor for the sketch to start programming.
+Ex: send `p` via the serial monitor for the sketch to start programming.
 
 For batch programming one could change the code to automatically upload the image as soon as a micro-controller is detected (via reset pin polling/interrupt, ISP polling or some other way).
 
