@@ -242,6 +242,9 @@ boolean target_setfuses(const uint8_t *fuses)
   spi_transaction(0xAC, 0xA8, 0x00, f);
   f = pgm_read_byte(&fuses[FUSE_EXT]);
   spi_transaction(0xAC, 0xA4, 0x00, f);
+  
+  while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
+  
   return true;
 }
 
@@ -331,7 +334,7 @@ boolean target_program()
       // add local offset to address making it the absolute word address
       // mask all adress bits inside of the page, compare value to current page variable
       else if(current_page != ((address + i) & pagemask))
-      { 
+      {
         // if the current address is the next multiple of a page: commit current page
         spi_transaction(0x4C, current_page >> 8, current_page & 0xFF, 0x00);
         
