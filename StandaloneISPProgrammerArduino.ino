@@ -1,8 +1,8 @@
 /***************************************************************************************
  *
  * Title:       Stand-alone ISP Programmer for Arduino
- * Version:     v1.0
- * Date:        2014-02-01
+ * Version:     v1.1
+ * Date:        2014-10-18
  * Author:      Karl Kangur <karl.kangur@gmail.com>
  * Website:     https://github.com/Robopoly/Stand-alone-ISP-Programmer-for-Arduino
  * Licence:     LGPL
@@ -12,7 +12,7 @@
 #include "images.h"
 
 // set the spi bus speed
-#define SPISPEED SPI32
+#define SPISPEED SPI128
 
 // pin definitions
 #define RESET A5
@@ -24,15 +24,31 @@ image_t *target_image;
 uint8_t imageFormat;
 
 // array containing all the available images
-image_t *images[] = {&image_prismino};
+image_t *images[] = {&image_prismino, &image_camera};
 
 void setup()
 {
   Serial.begin(9600);
+  
+  pinMode(13, OUTPUT);
 }
 
 void loop()
 {
+  // wait for button press
+  if(digitalRead(7))
+  {
+    digitalWrite(13, HIGH);
+  
+    // wait for button release
+    while(digitalRead(7));
+    
+    // launch the programming sequence
+    program();
+  
+    digitalWrite(13, LOW);
+  }
+  
   // wait for user input
   if(Serial.available())
   {
@@ -45,6 +61,7 @@ void loop()
       //case 't': eeprom_memory_test(); break;
       //case 'w': wipe_all_memory(); break;
       case 'f': read_fuse_bits(); break;
+      default: Serial.print("Command not recognised");
     }
   }
 }
@@ -80,6 +97,9 @@ void program()
     // see if any images are available for this target
     Serial.println("Searching for image");
     if(!target_findimage()) break;
+    // erase chip contents
+    Serial.println("Erasing memory");
+    if(!target_erase()) break;
     // set progamming fuses, lock fuse doesn't matter as it's wiped
     Serial.println("Setting programming fuse bits");
     if(!target_setfuses(target_image->progfuses)) break;
@@ -91,6 +111,8 @@ void program()
     target_setfuses(target_image->normfuses);
     break;
   }
+  
+  target_signature = 0;
   
   // reset pin modes
   reset_spi();
@@ -227,6 +249,16 @@ boolean target_findimage()
   return false;
 }
 
+boolean target_erase()
+{
+  // chip erase erases all current program memory, eeprom and lock bits (not fuse bits)
+  spi_transaction(0xAC, 0x80, 0x00, 0x00);
+  // poll the rdy/bsy flag to know when memory wipe is done
+  while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
+  
+  return true;
+}
+
 boolean target_setfuses(const uint8_t *fuses)
 {
   uint8_t f;
@@ -234,8 +266,6 @@ boolean target_setfuses(const uint8_t *fuses)
   // wait for the target to finish whatever it's doing
   while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
   
-  f = pgm_read_byte(&fuses[FUSE_LOCK]);
-  spi_transaction(0xAC, 0xE0, 0x00, 0xFF & f);
   f = pgm_read_byte(&fuses[FUSE_LOW]);
   spi_transaction(0xAC, 0xA0, 0x00, f);
   f = pgm_read_byte(&fuses[FUSE_HIGH]);
@@ -243,7 +273,18 @@ boolean target_setfuses(const uint8_t *fuses)
   f = pgm_read_byte(&fuses[FUSE_EXT]);
   spi_transaction(0xAC, 0xA4, 0x00, f);
   
+  // wait for the fuses to be written before writing the lock bits (this has been an issue)
   while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
+  
+  // the lock bits must be programmed last (datasheet p. 348)
+  f = pgm_read_byte(&fuses[FUSE_LOCK]);
+  spi_transaction(0xAC, 0xE0, 0x00, 0xC0 | f);
+  
+  while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
+  
+  char buffer[40];
+  sprintf(buffer, "low: %02X, high: %02X, ext: %02X, lock: %02X", pgm_read_byte(&fuses[FUSE_LOW]), pgm_read_byte(&fuses[FUSE_HIGH]), pgm_read_byte(&fuses[FUSE_EXT]), pgm_read_byte(&fuses[FUSE_LOCK]));
+  Serial.println(buffer);
   
   return true;
 }
@@ -283,12 +324,6 @@ boolean target_program()
   
   // clock programming time
   const uint32_t time = millis();
-  
-  // chip erase erases all current program memory, eeprom and lock bits (not fuse bits)
-  Serial.println("Erasing memory");
-  spi_transaction(0xAC, 0x80, 0x00, 0x00);
-  // poll the rdy/bsy flag to know when memory wipe is done
-  while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
   
   // select format, compact mode doesn't use colons as line delimiters
   imageFormat = pgm_read_byte(cursor) == ':' ? FORMAT_HEX : FORMAT_COMPACT;

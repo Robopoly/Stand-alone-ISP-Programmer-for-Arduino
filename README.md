@@ -122,6 +122,17 @@ If there isn't enough memory in the programmers program memory one can save the 
 [fusecalc]: http://www.engbedded.com/fusecalc "Engbedded Atmel AVR Fuse Calculator"
 [prismino]: https://github.com/Robopoly/PRismino "PRismino"
 
+## Version log
+
+### 1.1 (2014-10-18)
+
+* Fixed fuse bits setting.
+* Added linear camera firmware.
+
+### 1.0 (2014-02-02)
+
+* Initial version.
+
 ## Licence
 
 This software is published under [LGPL](http://www.gnu.org/licenses/lgpl.html).

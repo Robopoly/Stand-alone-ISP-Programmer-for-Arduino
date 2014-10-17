@@ -1,8 +1,8 @@
 /***************************************************************************************
  *
  * Title:       Stand-alone ISP Programmer for Arduino
- * Version:     v1.0
- * Date:        2014-02-01
+ * Version:     v1.1
+ * Date:        2014-10-18
  * Author:      Karl Kangur <karl.kangur@gmail.com>
  * Website:     https://github.com/Robopoly/Stand-alone-ISP-Programmer-for-Arduino
  * Licence:     LGPL
@@ -42,5 +42,6 @@ typedef struct image {
 
 // forward image declarations
 extern image_t PROGMEM image_prismino;
+extern image_t PROGMEM image_camera;
 
 #endif
