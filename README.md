@@ -126,7 +126,8 @@ If there isn't enough memory in the programmers program memory one can save the 
 
 ### 1.1 (2014-10-18)
 
-* Fixed fuse bits setting.
+* Fixed fuse bits settings bug.
+* Fixed a pointer issue in image fetching.
 * Added linear camera firmware.
 
 ### 1.0 (2014-02-02)

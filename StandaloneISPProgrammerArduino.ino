@@ -59,7 +59,7 @@ void loop()
       //case 'e': read_eeprom_memory(); break;
       //case 'm': program_memory_test(); break;
       //case 't': eeprom_memory_test(); break;
-      //case 'w': wipe_all_memory(); break;
+      case 'w': wipe_all_memory(); break;
       case 'f': read_fuse_bits(); break;
       default: Serial.print("Command not recognised");
     }
@@ -82,6 +82,24 @@ void read_fuse_bits()
   
   sprintf(buffer, "low: %02X, high: %02X, ext: %02X, lock: %02X", low, high, ext, lock);
   Serial.println(buffer);
+}
+
+void wipe_all_memory()
+{
+  if(!enable_memory_access())
+  {
+    reset_spi();
+    return;
+  }
+  if(!target_identify())
+  {
+    reset_spi();
+    return;
+  }
+  
+  target_erase();
+  
+  reset_spi();
 }
 
 void program()
@@ -197,10 +215,12 @@ void read_flash_memory()
 {
   if(!enable_memory_access())
   {
+    reset_spi();
     return;
   }
   if(!target_identify())
   {
+    reset_spi();
     return;
   }
   
@@ -242,6 +262,14 @@ boolean target_findimage()
     {
       // found a compatible image
       target_image = images[i];
+      Serial.println("Found image for target:");
+      Serial.print("\tSignatue: 0x");
+      Serial.println(pgm_read_word(&target_image->signature), HEX);
+      Serial.print("\tFuses: ");
+      Serial.println(pgm_read_dword(&target_image->normfuses), HEX);
+      Serial.print("\tPage size: ");
+      Serial.println(pgm_read_byte(&target_image->pagesize));
+      
       return true;
     }
   }
@@ -282,10 +310,6 @@ boolean target_setfuses(const uint8_t *fuses)
   
   while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
   
-  char buffer[40];
-  sprintf(buffer, "low: %02X, high: %02X, ext: %02X, lock: %02X", pgm_read_byte(&fuses[FUSE_LOW]), pgm_read_byte(&fuses[FUSE_HIGH]), pgm_read_byte(&fuses[FUSE_EXT]), pgm_read_byte(&fuses[FUSE_LOCK]));
-  Serial.println(buffer);
-  
   return true;
 }
 
@@ -306,10 +330,11 @@ boolean target_program()
 {
   uint16_t address;
   // fetch the starting address of the image
-  char *cursor = (char*) pgm_read_byte(&target_image->hexcode);
+  char *cursor = (char*) pgm_read_word(&target_image->hexcode);
   uint8_t i, len;
   
   const uint16_t pagesize = pgm_read_byte(&target_image->pagesize);
+  
   // a trick for initialising the first page address value
   uint16_t current_page = -1;
   
@@ -425,7 +450,9 @@ uint8_t spi_transaction(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
 uint8_t spi_send(uint8_t b)
 {
   uint8_t reply;
+  // write data to spi
   SPDR = b;
+  // wait for the reply
   while(!(SPSR & (1 << SPIF)));
   reply = SPDR;
   return reply;
