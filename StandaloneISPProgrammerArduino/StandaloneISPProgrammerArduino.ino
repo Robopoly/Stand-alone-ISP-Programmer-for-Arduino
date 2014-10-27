@@ -296,8 +296,14 @@ boolean target_setfuses(const uint8_t *fuses)
   
   f = pgm_read_byte(&fuses[FUSE_LOW]);
   spi_transaction(0xAC, 0xA0, 0x00, f);
+  
+  while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
+  
   f = pgm_read_byte(&fuses[FUSE_HIGH]);
   spi_transaction(0xAC, 0xA8, 0x00, f);
+  
+  while(spi_transaction(0xF0, 0x00, 0x00, 0x00) & 1);
+  
   f = pgm_read_byte(&fuses[FUSE_EXT]);
   spi_transaction(0xAC, 0xA4, 0x00, f);
   
