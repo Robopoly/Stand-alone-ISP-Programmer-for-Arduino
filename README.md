@@ -38,10 +38,9 @@ To use the sketch one has to tell it what to do via the serial monitor, here's t
 | Program memory      | `p`       | This instruction tries to identify the connected micro-controller, searches for a compatible entry in the available image array and uploads it. It checks if the reset pin is pulled high by the target before trying to communicate with it. |
 | Read program memory | `r`       | Dump all program memory from 0 to the maximum program memory address to serial monitor. The program memory size is indicated in the micro-controller signature bytes. |
 | Read fuse bits      | `f`       | Shows the current state of the fuse bits. |
+| Wipe program memory | `w`       | Erases program memory. |
 
 Ex: send `p` via the serial monitor for the sketch to start programming.
-
-For batch programming one could change the code to automatically upload the image as soon as a micro-controller is detected (via reset pin polling/interrupt, ISP polling or some other way).
 
 ### Example
 
@@ -49,7 +48,7 @@ An example is provided in the `image_prismino` folder, for which this sketch was
 
 ### Programming speed
 
-By default the SPI communication is `F_CPU/128`, this sketch has been tested with a lower prescaler and it programmed much faster. A test was done with a 12KB sketch, running at 16MHz and the target running at 16MHz as well. At 8MHz the target could not be identified as the clock was way too fast. Values should be compared to the slowest programming time.
+By default the SPI communication is `F_CPU/128`, this sketch has been tested with a lower prescaler and it programmed much faster, but sometimes it failed at higher speeds, so the best bet is the use the slowest speed. A test was done with a 12KB sketch, running at 16MHz and the target running at 16MHz as well. At 8MHz the target could not be identified as the clock was way too fast. Values should be compared to the slowest programming time.
 
 | Prescaler | SPI frequency | Programming time
 | --------- | ------------- | ----------------
@@ -123,6 +122,11 @@ If there isn't enough memory in the programmers program memory one can save the 
 [prismino]: https://github.com/Robopoly/PRismino "PRismino"
 
 ## Version log
+
+### 1.2 (2014-11-08)
+
+* Added LCD board firmware.
+* Added code to display current programming status on an I2C LCD screen.
 
 ### 1.1 (2014-10-18)
 

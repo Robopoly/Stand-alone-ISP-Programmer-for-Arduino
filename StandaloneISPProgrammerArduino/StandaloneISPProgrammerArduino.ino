@@ -1,21 +1,36 @@
 /***************************************************************************************
  *
  * Title:       Stand-alone ISP Programmer for Arduino
- * Version:     v1.1
- * Date:        2014-10-18
- * Author:      Karl Kangur <karl.kangur@gmail.com>
+ * Version:     v1.2
+ * Date:        2014-11-08
+ * Author:      Karl Kangur <karl.kangur@epfl.ch>
  * Website:     https://github.com/Robopoly/Stand-alone-ISP-Programmer-for-Arduino
  * Licence:     LGPL
  *
  ***************************************************************************************/
 #include <avr/pgmspace.h>
 #include "images.h"
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
-// set the spi bus speed
+// LCD display instance: address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// set the spi bus speed, use the slowest speed, higher might not always work
 #define SPISPEED SPI128
 
+// low battery value, about 2V
+#define LOW_BATTERY 800
+
+// time a message is shown on LCD
+#define MSG_TIME 2000
+
 // pin definitions
-#define RESET A5
+#define RESET   A5
+#define LED     13
+#define BUTTON  0
+#define BUZZER  8
+#define BATTERY A0
 // the isp pins are already defined by arduino
 
 // global variables
@@ -24,29 +39,65 @@ image_t *target_image;
 uint8_t imageFormat;
 
 // array containing all the available images
-image_t *images[] = {&image_prismino, &image_camera};
+image_t *images[] = {&image_prismino, &image_camera, &image_lcd};
+
+// battery level measurement, initialize to 1023
+uint16_t batteryLevel = 1023;
 
 void setup()
 {
+  // to read battery level use the internal 2.56V reference
+  analogReference(INTERNAL);
+  // allow 3ms for the new voltage reference to settle
+  delay(3);
+  
+  lcd.init();
+  
+  // average 16 values for battery reading level ()
+  for(uint8_t i = 0; i < 16; i++)
+  {
+    batteryLevel += analogRead(BATTERY);
+  }
+  // divide result by 16
+  batteryLevel >>= 4;
+  
+  // check battery state
+  if(batteryLevel < LOW_BATTERY)
+  {
+    lcd.clear();
+    lcd.setCursor(2,0);
+    lcd.print("LOW BATTERY!");
+    lcd.setCursor(0,1);
+    lcd.print("<- 2xAA");
+    delay(MSG_TIME);
+  }
+  
   Serial.begin(9600);
   
-  pinMode(13, OUTPUT);
+  pinMode(LED, OUTPUT);
+  
+  // enable button pull-up
+  digitalWrite(BUTTON, HIGH);
 }
 
 void loop()
 {
-  // wait for button press
-  if(digitalRead(7))
+  static byte state = 0;
+  static long stateTimeout = 0;
+  
+  // wait for button press (does not use interrupt vector)
+  if(!digitalRead(BUTTON))
   {
-    digitalWrite(13, HIGH);
+    // turn on LED for swag
+    digitalWrite(LED, HIGH);
   
     // wait for button release
-    while(digitalRead(7));
+    while(!digitalRead(BUTTON));
     
     // launch the programming sequence
     program();
   
-    digitalWrite(13, LOW);
+    digitalWrite(LED, LOW);
   }
   
   // wait for user input
@@ -64,6 +115,51 @@ void loop()
       default: Serial.print("Command not recognised");
     }
   }
+  
+  if(millis() > stateTimeout)
+  {
+    // show information on LCD when idle
+    lcd.clear();
+    switch(state)
+    {
+      case 0:
+        lcd.setCursor(4,0);
+        lcd.print("Robopoly");
+        lcd.setCursor(3,1);
+        lcd.print("programmer");
+        break;
+      case 1:
+        lcd.setCursor(0,0);
+        lcd.print("Connect MCU and");
+        lcd.setCursor(0,1);
+        lcd.print("press \"Prog\"");
+        break;
+      case 2:
+        lcd.setCursor(2,0);
+        lcd.print("LOW BATTERY!");
+        lcd.setCursor(0,1);
+        lcd.print("<- 2xAA");
+        break;
+    }
+    // go to next state
+    state++;
+    
+    // if the battery level is low show it
+    if(batteryLevel < LOW_BATTERY)
+    {
+      state %= 3;
+    }
+    else
+    {
+      state %= 2;
+    }
+    
+    // timeout between states
+    stateTimeout = millis() + MSG_TIME;
+  }
+    
+  // running average for battery level for low-pass because of boost circuit ripple
+  batteryLevel = (batteryLevel * 15 + analogRead(BATTERY)) >> 4;
 }
 
 // returns the low, high, extended and lock fuse bits
@@ -104,6 +200,7 @@ void wipe_all_memory()
 
 void program()
 {
+  boolean success = false;
   while(1)
   {
     // first check for connected target and enable memory access
@@ -123,7 +220,14 @@ void program()
     if(!target_setfuses(target_image->progfuses)) break;
     // actually program the target
     Serial.println("Starting programming");
-    if(!target_program()) break;
+    if(!target_program())
+    {
+      break;
+    }
+    else
+    {
+      success = true;
+    }
     // load final fuse bits
     Serial.println("Setting final fuse bits");
     target_setfuses(target_image->normfuses);
@@ -134,6 +238,16 @@ void program()
   
   // reset pin modes
   reset_spi();
+  
+  if(success)
+  {
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Programming");
+    lcd.setCursor(0,1);
+    lcd.print("complete");
+    delay(MSG_TIME); 
+  }
 }
 
 // as per the datasheet the only first command that can be sent is programming enable
@@ -150,6 +264,14 @@ boolean enable_memory_access()
   {
     // the target isn't activly pulling the reset pin to 1
     Serial.println("Error: reset pin not pulled to 1 by target");
+    
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("ERROR: MCU not");
+    lcd.setCursor(0,1);
+    lcd.print("detected");
+    delay(MSG_TIME);
+        
     return false;
   }
   
@@ -159,6 +281,7 @@ boolean enable_memory_access()
   pinMode(SCK, OUTPUT);
   digitalWrite(SCK, LOW);
   delay(50);
+  
   // enable memory access by pulling reset pin low and sending programming enable command
   digitalWrite(RESET, LOW);
   // datasheet says to wait at least 20ms at this point
@@ -205,6 +328,14 @@ boolean target_identify()
   if(target_signature == 0 || target_signature == 0xFFFF)
   {
     Serial.println("Error: target could not be identified");
+    
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("ERROR: cannot");
+    lcd.setCursor(0,1);
+    lcd.print("identify MCU");
+    delay(MSG_TIME);
+    
     return false;
   } 
   return true;
@@ -254,6 +385,8 @@ void read_flash_memory()
 
 boolean target_findimage()
 {
+  char name[16] = {0};
+      
   // iterate trough all images and find the one matching the signature
   for(uint8_t i = 0; i < sizeof(images) / sizeof(images[0]); i++)
   {
@@ -270,10 +403,30 @@ boolean target_findimage()
       Serial.print("\tPage size: ");
       Serial.println(pgm_read_byte(&target_image->pagesize));
       
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Target found:");
+      lcd.setCursor(0,1);
+      // Fetch the name of the target from program memory
+      for(uint8_t j = 0; j < 16; j++)
+      {
+        name[j] = (char) pgm_read_byte(&target_image->name[j]);
+      }
+      lcd.print(name);
+      delay(MSG_TIME);
+      
       return true;
     }
   }
   Serial.println("Error: no image found for this target");
+  
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("ERROR: target ");
+  lcd.setCursor(0,1);
+  lcd.print("not recognised");
+  delay(MSG_TIME);
+      
   return false;
 }
 
@@ -334,6 +487,10 @@ boolean target_setfuses(const uint8_t *fuses)
 // this reads the image and immediately dumps it to the target memory
 boolean target_program()
 {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Programming...");
+      
   uint16_t address;
   // fetch the starting address of the image
   char *cursor = (char*) pgm_read_word(&target_image->hexcode);

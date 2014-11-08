@@ -1,9 +1,9 @@
 /***************************************************************************************
  *
  * Title:       Stand-alone ISP Programmer for Arduino
- * Version:     v1.1
- * Date:        2014-10-18
- * Author:      Karl Kangur <karl.kangur@gmail.com>
+ * Version:     v1.2
+ * Date:        2014-11-08
+ * Author:      Karl Kangur <karl.kangur@epfl.ch>
  * Website:     https://github.com/Robopoly/Stand-alone-ISP-Programmer-for-Arduino
  * Licence:     LGPL
  *
@@ -33,6 +33,7 @@
 
 // image object
 typedef struct image {
+    const char name[16];	 // name of the target
     const uint16_t signature;	 // two signature bytes for the mcu
     const uint8_t progfuses[4];  // fuses to set before programming
     const uint8_t normfuses[4];  // fuses to set after programming
@@ -43,5 +44,6 @@ typedef struct image {
 // forward image declarations
 extern image_t PROGMEM image_prismino;
 extern image_t PROGMEM image_camera;
+extern image_t PROGMEM image_lcd;
 
 #endif
